@@ -41,8 +41,8 @@
     color:var(--text);
     font-family:'Mali', sans-serif;
     line-height:1.7;
-    overflow-x:hidden;
   }
+  .page-wrap{ overflow-x:hidden; position:relative; }
   body::before{
     content:"";
     position:fixed;
@@ -68,8 +68,7 @@
     display:flex;
     justify-content:center;
     gap:6px;
-    background:rgba(255,247,240,.92);
-    backdrop-filter:blur(6px);
+    background:var(--cream);
     border-bottom:2px solid var(--pink-light);
     padding:8px 10px;
     flex-wrap:wrap;
@@ -299,15 +298,29 @@
       0 4px 10px rgba(226,74,114,.35);
   }
   .mv-timeline-row{
+    position:relative;
     display:flex;
     align-items:flex-start;
     justify-content:center;
-    gap:4px;
+    gap:8px;
     flex-wrap:nowrap;
-    overflow-x:auto;
+    overflow:visible;
     padding:14px 4px 8px;
   }
+  .mv-timeline-row::before{
+    content:"";
+    position:absolute;
+    left:10%;
+    right:10%;
+    top:85px;
+    height:0;
+    border-top:2px dashed var(--pink);
+    opacity:.6;
+    z-index:0;
+  }
   .mv-item{
+    position:relative;
+    z-index:1;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -333,7 +346,7 @@
   }
   .mv-clip{
     position:relative;
-    width:104px;
+    width:96px;
     background:rgba(255,225,236,.75);
     border-radius:18px;
     padding:10px 7px 10px;
@@ -401,14 +414,6 @@
   @keyframes emoji-blink{
     0%,100%{ opacity:1; }
     50%{ opacity:.25; }
-  }
-  .mv-arrow{
-    flex:0 0 auto;
-    width:16px;
-    height:0;
-    border-top:2px dashed var(--pink);
-    opacity:.7;
-    margin-top:85px;
   }
 
   /* ---------- quiz ---------- */
@@ -755,7 +760,7 @@
   /* ---------- spotlight (ongoing activity) ---------- */
   .spotlight-wrap{ max-width:600px; margin:30px auto 6px; padding:0 24px; }
   a.spotlight{ text-decoration:none; cursor:pointer; transition:background-color .25s ease; }
-  a.spotlight:hover, a.spotlight:active{ background-color:var(--pink-light); }
+  a.spotlight:hover, a.spotlight:active{ background-color:#FFD3E4; }
   .spotlight{
     background:var(--white);
     border:3px dashed var(--peach-deep);
@@ -810,6 +815,7 @@
   .ticket-tiers .tier{
     background:var(--pink-light);
     color:var(--pink-deep);
+    border:1.5px solid var(--pink);
     border-radius:999px;
     padding:3px 10px;
     font-size:.8rem;
@@ -1163,15 +1169,15 @@
   .sushi-parade-layer{ position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
   .parade-fish{
     position:absolute;
-    right:-8%;
     font-size:1.6rem;
     animation-name:swim-across-rtl;
     animation-timing-function:linear;
     animation-fill-mode:forwards;
+    will-change:transform;
   }
   @keyframes swim-across-rtl{
-    from{ transform:translateX(0); opacity:1; }
-    to{ transform:translateX(-116vw); opacity:1; }
+    from{ transform:translateX(0); }
+    to{ transform:translateX(var(--travel)); }
   }
 
   /* ---------- meadow / supporters section ---------- */
@@ -1363,6 +1369,8 @@
   <a href="#meadow">🍣 ผู้สนับสนุน</a>
 </nav>
 
+<div class="page-wrap">
+
   <div class="hero">
     <span class="sparkle" style="top:6px;left:6%;font-size:1.3rem;">✦</span>
     <span class="sparkle" style="top:40px;right:8%;font-size:1.1rem;">✧</span>
@@ -1417,7 +1425,6 @@
             </div>
           </div>
         </div>
-        <span class="mv-arrow"></span>
         <div class="mv-item" data-mv="ge5">
           <span class="mv-ge-label">GE5</span>
           <div class="mv-clip">
@@ -1429,7 +1436,6 @@
             </div>
           </div>
         </div>
-        <span class="mv-arrow"></span>
         <div class="mv-item">
           <span class="mv-ge-label">GE6</span>
           <div class="mv-clip">
@@ -1955,6 +1961,8 @@
     <div class="gallery-counter" id="galleryCounter">1 / 5</div>
   </div>
 
+</div>
+
 <script>
   // supporter count from the sushi field
   document.getElementById('supporterCount').textContent = document.querySelectorAll('.sushi-item').length;
@@ -2041,20 +2049,26 @@
 
   // running salmon-sushi parade on activity card click, right to left, scaled by amount
   function spawnSushiParade(amount){
-    const count = Math.max(4, Math.min(24, Math.round(amount / 300)));
+    // clear any leftover parades from rapid taps so fish never pile up
+    document.querySelectorAll('.sushi-parade-layer').forEach(el => el.remove());
+
+    const count = Math.max(4, Math.min(16, Math.round(amount / 350)));
     const layer = document.createElement('div');
     layer.className = 'sushi-parade-layer';
     document.body.appendChild(layer);
+    const vw = window.innerWidth;
     for(let i=0;i<count;i++){
       const s = document.createElement('span');
       s.className = 'parade-fish';
       s.textContent = '🍣';
       s.style.top = (Math.random()*80+5) + 'vh';
+      s.style.left = vw + 'px';
+      s.style.setProperty('--travel', '-' + (vw + 140) + 'px');
       s.style.animationDelay = (Math.random()*0.6) + 's';
       s.style.animationDuration = (1.4 + Math.random()*0.8) + 's';
       layer.appendChild(s);
     }
-    setTimeout(()=>layer.remove(), 2600);
+    setTimeout(()=>{ if(layer.parentNode) layer.remove(); }, 3200);
   }
   document.querySelectorAll('.card[data-amount]').forEach(card=>{
     card.addEventListener('click', ()=>{
