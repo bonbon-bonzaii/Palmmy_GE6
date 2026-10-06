@@ -3869,17 +3869,50 @@
     });
   })();
 
-  // collapse / expand the "past activities" trail (animated)
+  // collapse / expand the "past activities" trail (animated, height measured from real layout)
   (function(){
     const trail = document.getElementById('trailSection');
     const btn = document.getElementById('trailExpandBtn');
+    const wrap = document.getElementById('trailExpandWrap');
     if (!trail || !btn) return;
-    const COLLAPSED_HEIGHT = 2700;
+    const VISIBLE_COUNT = 8; // how many stops should be visible before the fold
+    const PEEK = 60; // extra px so the next stop peeks out under the gradient
     let savedScrollY = null;
     let isExpanded = false;
-    trail.style.maxHeight = COLLAPSED_HEIGHT + 'px';
+    let collapsedHeight = null;
+
+    function measureCollapsedHeight(){
+      const stops = trail.querySelectorAll(':scope > .stop');
+      if (stops.length <= VISIBLE_COUNT){
+        return null; // not enough activities to bother collapsing
+      }
+      const lastVisible = stops[VISIBLE_COUNT - 1];
+      return Math.round(lastVisible.offsetTop + lastVisible.offsetHeight + PEEK);
+    }
+
+    function applyCollapsedState(){
+      collapsedHeight = measureCollapsedHeight();
+      if (collapsedHeight === null){
+        trail.style.maxHeight = 'none';
+        if (wrap) wrap.style.display = 'none';
+        return;
+      }
+      if (!isExpanded){
+        trail.style.maxHeight = collapsedHeight + 'px';
+      }
+    }
+
+    // measure once layout + images have settled, so real font/image heights are used (not a guessed constant)
+    if (document.readyState === 'complete'){
+      applyCollapsedState();
+    } else {
+      window.addEventListener('load', applyCollapsedState);
+    }
+    // re-measure if the viewport is resized/rotated while collapsed
+    window.addEventListener('resize', ()=>{ if (!isExpanded) applyCollapsedState(); });
 
     btn.addEventListener('click', ()=>{
+      if (collapsedHeight === null){ collapsedHeight = measureCollapsedHeight(); }
       if (!isExpanded){
         // about to expand: remember where the user was so collapsing back can return them here
         savedScrollY = window.scrollY;
@@ -3888,7 +3921,7 @@
         btn.classList.add('expanded');
         isExpanded = true;
       } else {
-        trail.style.maxHeight = COLLAPSED_HEIGHT + 'px';
+        trail.style.maxHeight = (collapsedHeight !== null ? collapsedHeight : trail.scrollHeight) + 'px';
         trail.classList.remove('trail-expanded');
         btn.classList.remove('expanded');
         isExpanded = false;
